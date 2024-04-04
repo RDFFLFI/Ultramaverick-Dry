@@ -25,6 +25,5 @@ namespace ELIXIR.DATA.DTOs.MISCELLANEOUS_DTOs
         public string PreparedBy { get; set; }
         public bool IsActive { get; set; }
 
-
     }
 }
