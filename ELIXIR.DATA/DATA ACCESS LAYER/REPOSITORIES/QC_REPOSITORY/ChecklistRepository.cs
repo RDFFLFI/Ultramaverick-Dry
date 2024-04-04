@@ -19,27 +19,25 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.REPOSITORIES.QC_REPOSITORY
         {
             _context = context;
         }
-
-
-        #region Add Checklist
-        public async Task<bool> AddChecklists(Checklists input)
+        
+        /*#region Add Checklist
+        /*public async Task<bool> AddChecklists(Checklists input)
         {
-            foreach (var checklistStrings in input.ChecklistsString
-                         .Select(compliance => new CheckListString
-                         {
-                             PO_Summary_Id = compliance.PO_Summary_Id,
-                             Checlist_Type = compliance.Checlist_Type,
-                             Values = compliance.Values,
-                             Remarks = compliance.Remarks
-                         }))
-                
-                await _context.CheckListStrings.AddAsync(checklistStrings);
-            
+            foreach (var newChecklistString in input.ChecklistsString.Select(checklistString => new CheckListString
+                     {
+                         ReceivingId = checklistString.PO_Summary_Id,
+                         Checlist_Type = checklistString.Checlist_Type,
+                         Value = checklistString.Value,
+                         Remarks = checklistString.Remarks
+                     }))
+            {
+                await _context.CheckListStrings.AddAsync(newChecklistString);
+            }
             await _context.SaveChangesAsync();
-            
             return true;
         }
-        #endregion
+
+        #endregion#1#*/
         public async Task<bool> UpdateReceivingId(int receivingId)
         {
             var checklistString = await _context.CheckListStrings.Where(x => x.ReceivingId == null).ToListAsync();
@@ -60,10 +58,10 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.REPOSITORIES.QC_REPOSITORY
             {
                 ReceivingId = x.ReceivingId,
                 Checklist_Type = x.Checlist_Type,
-                Values = JsonConvert.DeserializeObject<List<string>>(x.Value),
+                Values = x.Value,
                 Remarks = x.Remarks
             }).ToListAsync();
-
+        
             return checklistStrings;
         }
         public async Task<IReadOnlyList<ChecklistStringDTO>> GetChecklistByPoSummaryId(int receivingId)
@@ -74,28 +72,28 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.REPOSITORIES.QC_REPOSITORY
                 {
                 ReceivingId = x.ReceivingId,
                 Checklist_Type = x.Checlist_Type,
-                Values = JsonConvert.DeserializeObject<List<string>>(x.Value),
+                Values = x.Value,
                 Remarks = x.Remarks
                 }).ToListAsync();
-
+        
             return checklistStrings;
         }
-
+        
         public async Task<ForViewingofChecklistResult> GetPoReceivingInformation(int receivingId)
         {
             var poSummary = await _context.QC_Receiving
                 .Where(x => x.Id == receivingId)
                 .FirstOrDefaultAsync();
-
+        
             if (poSummary == null)
             {
                 throw new NoResultFound();
             }
-
+        
             var checklists = _context.CheckListStrings
                 .Where(x => x.ReceivingId == receivingId)
                 .ToList();
-
+        
             var checklistGroups = checklists
                 .GroupBy(x => x.ReceivingId)
                 .Select(g => new ChecklistGroups
@@ -103,17 +101,17 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.REPOSITORIES.QC_REPOSITORY
                     Checklists = g.Select(c => new ChecklistStringDTO
                     {
                         Checklist_Type = c.Checlist_Type,
-                        Values = JsonConvert.DeserializeObject<List<string>>(c.Value),
+                        Values = c.Value,
                         Remarks = c.Remarks
                     }).ToList()
                 });
-
+        
             var ckk = _context.CheckListStrings
             .Where(c => c.ReceivingId == receivingId)
             .Select(c => new ChecklistStringDTO
             {
                 Checklist_Type = c.Checlist_Type,
-                Values = JsonConvert.DeserializeObject<List<string>>(c.Value),
+                Values = c.Value,
                 Remarks = c.Remarks
             }).ToList();
 
@@ -143,7 +141,7 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.REPOSITORIES.QC_REPOSITORY
                 MonitoredBy = poSummary.MonitoredBy,
                 Checklists = ckk
             };
-
+        
             return result;
         }
 

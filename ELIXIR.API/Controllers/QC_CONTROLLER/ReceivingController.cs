@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using ELIXIR.DATA.DATA_ACCESS_LAYER.COMMON;
 using ELIXIR.DATA.DATA_ACCESS_LAYER.EXCEPTIONS;
 using ELIXIR.DATA.DATA_ACCESS_LAYER.MODELS.QC_CHECKLIST;
+using MediatR;
 
 namespace ELIXIR.API.Controllers.QC_CONTROLLER
 {
@@ -21,25 +22,23 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
     public class ReceivingController : BaseApiController
     {
         private readonly IUnitOfWork _unitOfWork;
-        public ReceivingController(IUnitOfWork unitofwork)
+        private readonly IMediator _mediator;
+        public ReceivingController(IUnitOfWork unitofwork, IMediator mediator)
         {
             _unitOfWork = unitofwork;
+            _mediator = mediator;
         }
 
         [HttpPost]
         [Route("AddNewReceivingInformationInPO")]
-        public async Task<IActionResult> CreateNewReceivingInformation(Checklists input)
+        public async Task<IActionResult> CreateNewReceivingInformation([FromBody]PO_Receiving input)
         {
             if (ModelState.IsValid)
             {
-                await _unitOfWork.QcChecklist.AddChecklists(input);
-                await _unitOfWork.Receives.AddNewReceivingInformation(input.PO_Receiving);
-                
-                // Save all changes to the database
+                await _unitOfWork.Receives.AddNewReceivingInformation(input);
                 await _unitOfWork.CompleteAsync();
-                return Ok(input.PO_Receiving);
+                return Ok(input);
             }
-
             return new JsonResult("Something went wrong!") { StatusCode = 500 };
         }
         
@@ -49,12 +48,9 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
         {
             if (ModelState.IsValid)
             {
-
                 foreach (PO_Reject items in reject)
                 {
-
                     await _unitOfWork.Receives.AddNewRejectInfo(items);
-
                 }
 
                 await _unitOfWork.CompleteAsync();
@@ -455,6 +451,7 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
             var rejectlist = await _unitOfWork.Order.GetRejectMoveOrderNotification();
             var forallocation = await _unitOfWork.Order.GetForAllocationOrdersForNotification();
             var approvedMoveOrder = await _unitOfWork.Order.GetAllapprovedMoveorderNotification();
+            var nearlyExpiryItem = await _unitOfWork.LaboratoryTest.GetAllNearlyExpiryItemsCount();
 
             //QC ReceivingCount
             var posummarycount = posummary.Count();
@@ -479,6 +476,9 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
             var rejectlistcount = rejectlist.Count();
             var forallocationcount = forallocation.Count();
             var approvedMoveOrdercount = approvedMoveOrder.Count();
+            
+            //LabTest
+            var nearlyExpiryItems = nearlyExpiryItem.Count();
 
 
             var countList = new
@@ -554,6 +554,10 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
                 ApprovedMoveOrder = new
                 {
                     approvedMoveOrdercount
+                },
+                NearlyExpiryItems = new
+                {
+                    nearlyExpiryItems
                 }
             };
 
@@ -633,13 +637,13 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
         public async Task<IActionResult> GetChecklistByPoSummaryId([FromQuery] int id)
         {
             var checklist = await _unitOfWork.QcChecklist.GetChecklistByPoSummaryId(id);
-
+        
             if (checklist.Count == 0)
                 return BadRequest("No Records Found");
-
+        
             return Ok(checklist);
         }
-
+        
         [HttpGet("GetPoSummaryInformation")]
         public async Task<ActionResult<ForViewingofChecklistResult>> GetP0SummaryInformation(int receivingId)
         {
@@ -648,7 +652,7 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
             try
             {
                 var poSummaryInformationResult = await _unitOfWork.QcChecklist.GetPoReceivingInformation(receivingId);
-
+        
                 result.Success = true;
                 result.Data = poSummaryInformationResult;
                 return Ok(result);
@@ -659,7 +663,7 @@ namespace ELIXIR.API.Controllers.QC_CONTROLLER
                 result.Messages.Add(e.Message);
                 return Conflict(result);
             }
-
+        
         }
         [HttpPut]
         [Route("UpdateReceivingId/{id}")]

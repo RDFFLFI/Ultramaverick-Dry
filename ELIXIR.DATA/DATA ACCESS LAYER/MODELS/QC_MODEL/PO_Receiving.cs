@@ -21,7 +21,7 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.MODELS.QC_MODEL
         }
 
         [Column(TypeName = "decimal(18,2)")]
-        public int Expected_Delivery {
+        public decimal Expected_Delivery {
             get; 
             set;
         }
@@ -116,7 +116,11 @@ namespace ELIXIR.DATA.DATA_ACCESS_LAYER.MODELS.QC_MODEL
         }
         
         public string MonitoredBy { get; set; }
-        public string ProductType { get; set; }
-        public virtual ICollection<CheckListString> Checklist { get; set; }
+
+        public string ProductType
+        {
+            get;
+            set;
+        }
     }
 }
